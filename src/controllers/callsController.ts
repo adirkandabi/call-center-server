@@ -5,7 +5,7 @@ import Tag from "../models/Tags";
 // Get all calls
 const Get = async (req: Request, res: Response) => {
   try {
-    const calls = await Call.find();
+    const calls = await Call.find().populate("tags");
     res.status(200).json(calls);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch tags" });
@@ -63,7 +63,7 @@ const assignTag = async (req: Request, res: Response) => {
         { $push: { tags: req.body.tag_id } },
         { new: true }
       ).populate("tags");
-      res.status(200).json({ updatedCall });
+      res.status(200).json(updatedCall);
     }
   } catch (err) {
     res.status(500).json({ error: err || "Internal server error" });
