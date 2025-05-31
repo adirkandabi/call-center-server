@@ -5,5 +5,5 @@ const router = express.Router();
 
 router.post("/", suggestedTasksController.Create);
 router.get("/", suggestedTasksController.Get);
-router.put("/", suggestedTasksController.Update);
+router.patch("/", suggestedTasksController.Update);
 export default router;

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Tag from "../models/Tags";
+import { CreateTags, GetTags, UpdateTag } from "../services/tagsService";
 
 // Create new tag
 const Create = async (req: Request, res: Response) => {
@@ -7,14 +8,11 @@ const Create = async (req: Request, res: Response) => {
     if (!req.body || !req.body.title) {
       res.status(400).json({ error: "title is required" });
     }
-    const tag = await Tag.findOne({ title: req.body.title });
-    if (tag) {
+    const savedTag = await CreateTags(req.body.title);
+    if (!savedTag) {
       res.status(400).json({ error: "tag is exist" });
-    } else {
-      const newTag = new Tag({ title: req.body.title });
-      const savedTag = await newTag.save();
-      res.status(201).json(savedTag);
     }
+    res.status(201).json(savedTag);
   } catch (err: any) {
     res.status(500).json({ error: err || "Internal server error" });
   }
@@ -23,7 +21,7 @@ const Create = async (req: Request, res: Response) => {
 // Get all tags
 const Get = async (req: Request, res: Response) => {
   try {
-    const tags = await Tag.find();
+    const tags = await GetTags();
     res.status(200).json(tags);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch tags" });
@@ -39,12 +37,7 @@ const Update = async (req: Request, res: Response) => {
     if (!req.body._id) {
       res.status(400).json({ error: "id is required" });
     }
-    const updatedTag = await Tag.findByIdAndUpdate(
-      req.body._id,
-      { title: req.body.title },
-      { new: true }
-    );
-
+    const updatedTag = await UpdateTag(req.body._id, req.body.title);
     res.status(200).json(updatedTag);
   } catch (err: any) {
     res.status(500).json({ error: err || "Internal server error" });

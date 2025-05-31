@@ -1,14 +1,23 @@
 import { Request, Response } from "express";
 import Call from "../models/Calls";
 import Tag from "../models/Tags";
+import CallTasks from "../models/CallTasks";
+import SuggestedTasks from "../models/SuggestedTasks";
+import {
+  GetCalls,
+  CreateCall,
+  UpdateCall,
+  AssignTag,
+} from "../services/callsService";
 
 // Get all calls
 const Get = async (req: Request, res: Response) => {
   try {
-    const calls = await Call.find().populate("tags");
-    res.status(200).json(calls);
+    const fullData = await GetCalls();
+    res.status(200).json(fullData);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch tags" });
+    console.error("Failed to fetch calls:", err);
+    res.status(500).json({ error: "Failed to fetch calls" });
   }
 };
 
@@ -18,8 +27,7 @@ const Create = async (req: Request, res: Response) => {
     if (!req.body || !req.body.title) {
       res.status(400).json({ error: "title is required" });
     }
-    const newCall = new Call({ title: req.body.title });
-    const savedCall = await newCall.save();
+    const savedCall = await CreateCall(req.body.title);
     res.status(201).json(savedCall);
   } catch (err: any) {
     res.status(500).json({ error: err || "Internal server error" });
@@ -34,12 +42,7 @@ const Update = async (req: Request, res: Response) => {
     if (!req.body._id) {
       res.status(400).json({ error: "id is required" });
     }
-    const updatedCall = await Call.findByIdAndUpdate(
-      req.body._id,
-      { title: req.body.title },
-      { new: true }
-    ).populate("tags");
-
+    const updatedCall = await UpdateCall(req.body.title, req.body._id);
     res.status(200).json(updatedCall);
   } catch (err: any) {
     res.status(500).json({ error: err || "Internal server error" });
@@ -48,25 +51,24 @@ const Update = async (req: Request, res: Response) => {
 // Assign tag to a call
 const assignTag = async (req: Request, res: Response) => {
   try {
-    if (!req.body || !req.body._id) {
+    const { _id, tag_id } = req.body;
+
+    if (!_id) {
       res.status(400).json({ error: "id is required" });
+      return;
     }
-    if (!req.body.tag_id) {
-      res.status(400).json({ error: "title is required" });
+    if (!tag_id) {
+      res.status(400).json({ error: "tag_id is required" });
+      return;
     }
-    const tag = await Tag.findById(req.body.tag_id);
-    if (!tag) {
-      res.status(404).json({ error: "Tag not found" });
-    } else {
-      const updatedCall = await Call.findByIdAndUpdate(
-        req.body._id,
-        { $push: { tags: req.body.tag_id } },
-        { new: true }
-      ).populate("tags");
-      res.status(200).json(updatedCall);
+    const response = await AssignTag(_id, tag_id);
+    if (!response) {
+      res.status(400).json({ error: "Somthing went wrong" });
     }
+    res.status(200).json(response);
   } catch (err) {
-    res.status(500).json({ error: err || "Internal server error" });
+    console.error("Error in assignTag:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 export default {
